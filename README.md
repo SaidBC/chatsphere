@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChatSphere UI
 
-## Getting Started
+This is the enhanced UI component for the ChatSphere real-time chat application. Built with Next.js, it provides a modern, responsive user interface with additional features beyond the core frontend.
 
-First, run the development server:
+## Technologies
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js**: React framework with server-side rendering
+- **TypeScript**: For type safety
+- **TailwindCSS**: Utility-first CSS framework
+- **Geist UI**: Modern UI components
+- **API Integration**: Connects to ChatSphere API
+
+## Project Structure
+
+```
+chatsphere/
+├── app/                # Next.js app directory
+│   ├── api/            # API routes
+│   ├── components/     # UI components
+│   └── page.tsx        # Main page component
+├── public/             # Static assets
+├── styles/             # CSS styles
+├── lib/                # Utility functions
+├── types/              # TypeScript type definitions
+├── next.config.js      # Next.js configuration
+└── package.json        # Dependencies and scripts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Enhanced UI**: Modern, responsive design
+- **Token Management**: UI for generating and managing API tokens
+- **User Management**: User profile and settings
+- **Room Management**: Create, join, and manage chat rooms
+- **Real-time Notifications**: Notifications for new messages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup and Installation
 
-## Learn More
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. Set up environment variables:
+   Create a `.env.local` file with the following variables:
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:3001
+   NEXT_PUBLIC_WS_URL=ws://localhost:3001
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Deploy on Vercel
+## Available Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm start`: Start production server
+- `npm run lint`: Run ESLint
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Integration with ChatSphere API
+
+The ChatSphere UI integrates with the ChatSphere API server for:
+
+1. **User Authentication**: Login and registration
+2. **Token Management**: Generate and manage API tokens
+3. **Room Management**: Create and join chat rooms
+4. **Message Handling**: Send and receive messages
+
+## Building for Production
+
+To build the application for production:
+
+```bash
+npm run build
+```
+
+This will create an optimized production build.
+
+## Deployment
+
+The easiest way to deploy the ChatSphere UI is to use the [Vercel Platform](https://vercel.com) from the creators of Next.js.
+
+```bash
+npm run build
+npm start
+```
+
+## License
+
+MIT
