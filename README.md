@@ -9,6 +9,8 @@ This is the enhanced UI component for the ChatSphere real-time chat application.
 - **TailwindCSS**: Utility-first CSS framework
 - **Geist UI**: Modern UI components
 - **API Integration**: Connects to ChatSphere API
+- **PostgreSQL**: Relational database for data persistence
+- **Prisma**: Type-safe ORM for database access
 
 ## Project Structure
 
@@ -46,9 +48,16 @@ chatsphere/
    ```
    NEXT_PUBLIC_API_URL=http://localhost:3001
    NEXT_PUBLIC_WS_URL=ws://localhost:3001
+   DATABASE_URL=postgresql://username:password@localhost:5432/chatsphere
    ```
 
-3. Start the development server:
+3. Set up the database:
+   ```bash
+   npx prisma migrate dev
+   ```
+   This will create the database tables based on the Prisma schema.
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
@@ -61,6 +70,18 @@ chatsphere/
 - `npm run build`: Build for production
 - `npm start`: Start production server
 - `npm run lint`: Run ESLint
+
+## Database Structure
+
+ChatSphere uses PostgreSQL with Prisma ORM for data management. The database includes the following models:
+
+- **User**: User accounts and profile information
+- **Account**: OAuth provider accounts linked to users
+- **Session**: User sessions for authentication
+- **VerificationToken**: Email verification tokens
+- **ApiToken**: API access tokens for users and clients
+
+Note: Chat rooms and messages are handled by the backend API service.
 
 ## Integration with ChatSphere API
 
