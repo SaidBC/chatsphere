@@ -6,21 +6,34 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 /**
- * Generic fetch function with error handling
+ * Generic fetch function with error handling and authentication
  */
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   try {
+    // Create headers with existing headers from options
+    const headers = new Headers(options.headers || {});
+    
+    // Set content type if not already set
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+    
+    // Try to get the session token if we're in the browser
+    if (typeof window !== 'undefined') {
+      // For NextAuth.js, we'll use the cookie approach since the token is stored securely
+      // The middleware will extract the token from the cookie
+      // No need to manually set Authorization header as cookies will be sent automatically
+    }
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
+      credentials: 'include', // Include cookies for session-based auth
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'API request failed');
+      throw new Error(errorData.message || `API request failed: ${response.status}`);
     }
 
     return await response.json();
