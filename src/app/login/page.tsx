@@ -26,13 +26,17 @@ export default function Login() {
 
       if (result?.error) {
         setError('Invalid email or password');
+        setIsLoading(false);
       } else {
-        router.push('/dashboard');
+        // Use router.replace instead of push to avoid browser history issues
+        // Add a small delay to ensure the session is properly established
+        setTimeout(() => {
+          router.replace('/dashboard');
+        }, 500);
       }
     } catch (error) {
       setError('An error occurred during login. Please try again.');
       console.error('Login error:', error);
-    } finally {
       setIsLoading(false);
     }
   };

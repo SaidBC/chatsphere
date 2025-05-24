@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import websocketService from '@/services/websocket';
-import { messagesApi } from '@/services/api';
+import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { websocketService } from "react-live-chatroom";
 
 interface Message {
   id: string;
@@ -25,56 +24,62 @@ export default function ChatRoom({ roomId, roomName }: ChatRoomProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     if (!session?.user?.id) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     // Connect to WebSocket
     websocketService.connect(session.user.id);
-    
+
     // Join the room
     const connectHandler = () => {
       websocketService.joinRoom(roomId);
     };
-    
+
     // Register connect handler
     const unregisterConnect = websocketService.onConnect(connectHandler);
-    
+
     // Register message history handler
-    const unregisterMessageHistory = websocketService.onMessage('message_history', (data) => {
-      setMessages(data.messages);
-      setIsLoading(false);
-      setTimeout(scrollToBottom, 100);
-    });
-    
+    const unregisterMessageHistory = websocketService.onMessage(
+      "message_history",
+      (data) => {
+        setMessages(data.messages);
+        setIsLoading(false);
+        setTimeout(scrollToBottom, 100);
+      }
+    );
+
     // Register new message handler
-    const unregisterNewMessage = websocketService.onMessage('new_message', (data) => {
-      setMessages((prevMessages) => [...prevMessages, data]);
-      setTimeout(scrollToBottom, 100);
-    });
-    
+    const unregisterNewMessage = websocketService.onMessage(
+      "new_message",
+      (data) => {
+        setMessages((prevMessages) => [...prevMessages, data]);
+        setTimeout(scrollToBottom, 100);
+      }
+    );
+
     // Register error handler
-    const unregisterError = websocketService.onMessage('error', (data) => {
+    const unregisterError = websocketService.onMessage("error", (data) => {
       setError(data.message);
     });
-    
+
     // If already connected, join the room
     if (websocketService.isConnected()) {
       websocketService.joinRoom(roomId);
     }
-    
+
     // Cleanup function
     return () => {
       unregisterConnect();
@@ -83,31 +88,31 @@ export default function ChatRoom({ roomId, roomName }: ChatRoomProps) {
       unregisterError();
     };
   }, [session, roomId, router]);
-  
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   // Handle sending a new message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || !session?.user?.id) return;
-    
+
     // Send message via WebSocket
     websocketService.sendMessage(newMessage);
-    
+
     // Clear the input
-    setNewMessage('');
+    setNewMessage("");
   };
-  
+
   // Format timestamp
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-  
+
   // Check if message is from current user
   const isCurrentUser = (userId: string) => {
     return userId === session?.user?.id;
@@ -119,7 +124,7 @@ export default function ChatRoom({ roomId, roomName }: ChatRoomProps) {
       <div className="bg-gray-800 p-4 border-b border-gray-700 flex items-center">
         <h2 className="text-xl font-semibold text-white">{roomName}</h2>
       </div>
-      
+
       {/* Messages area with custom scrollbar */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 chat-scrollbar">
         {isLoading ? (
@@ -132,15 +137,17 @@ export default function ChatRoom({ roomId, roomName }: ChatRoomProps) {
           </div>
         ) : (
           messages.map((message) => (
-            <div 
-              key={message.id} 
-              className={`flex ${isCurrentUser(message.userId) ? 'justify-end' : 'justify-start'}`}
+            <div
+              key={message.id}
+              className={`flex ${
+                isCurrentUser(message.userId) ? "justify-end" : "justify-start"
+              }`}
             >
-              <div 
+              <div
                 className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${
-                  isCurrentUser(message.userId) 
-                    ? 'bg-accent-1 text-white' 
-                    : 'bg-gray-700 text-gray-100'
+                  isCurrentUser(message.userId)
+                    ? "bg-accent-1 text-white"
+                    : "bg-gray-700 text-gray-100"
                 }`}
               >
                 {!isCurrentUser(message.userId) && (
@@ -158,14 +165,10 @@ export default function ChatRoom({ roomId, roomName }: ChatRoomProps) {
         )}
         <div ref={messagesEndRef} />
       </div>
-      
+
       {/* Message input */}
       <div className="bg-gray-800 border-t border-gray-700 p-4">
-        {error && (
-          <div className="mb-2 text-red-400 text-sm">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-2 text-red-400 text-sm">{error}</div>}
         <form onSubmit={handleSendMessage} className="flex">
           <input
             type="text"

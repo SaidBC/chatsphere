@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import ChatRoom from '@/components/ChatRoom';
-import { roomsApi } from '@/services/api';
+import { roomsApi } from 'react-live-chatroom';
 
 interface Room {
   id: string;
