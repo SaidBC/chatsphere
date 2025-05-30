@@ -24,7 +24,32 @@ const TokenInput: React.FC<TokenInputProps> = ({ onTokenValidated }) => {
     setIsValidating(true);
     setError(null);
     
+    // First, basic validation of token format
+    if (!tokenToValidate.trim()) {
+      setError('Please enter a token');
+      setIsValidating(false);
+      return;
+    }
+    
+    // Check if it's a JWT token (should have 3 parts separated by dots)
+    const parts = tokenToValidate.split('.');
+    if (parts.length !== 3) {
+      setError('Invalid token format. API tokens should have 3 parts separated by dots.');
+      setIsValidating(false);
+      return;
+    }
+    
     try {
+      // Try to decode the middle part to see if it's a valid base64 encoded JSON
+      try {
+        const payload = JSON.parse(atob(parts[1]));
+        console.debug('Token payload structure:', Object.keys(payload));
+      } catch (decodeErr) {
+        console.warn('Could not decode token payload:', decodeErr);
+        // Continue with validation even if we can't decode locally
+      }
+      
+      // Send to API for validation
       const result = await tokenApi.verifyToken(tokenToValidate);
       
       if (result.valid) {
@@ -32,10 +57,10 @@ const TokenInput: React.FC<TokenInputProps> = ({ onTokenValidated }) => {
         tokenApi.saveToken(tokenToValidate);
         onTokenValidated();
       } else {
-        setError('The provided token is invalid. Please check and try again.');
+        setError(`Token validation failed: ${result.message || 'Please check your token and try again.'}`);
       }
     } catch (err) {
-      setError('Error validating token. Please try again.');
+      setError(`Error validating token: ${(err as Error).message || 'Please try again.'}`);
       console.error('Token validation error:', err);
     } finally {
       setIsValidating(false);
