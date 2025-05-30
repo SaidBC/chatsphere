@@ -60,7 +60,7 @@ export default function Rooms() {
 
     try {
       // Import the API service
-      const { roomsApi } = await import("react-live-chatroom");
+      const { roomsApi } = await import("@/services/api");
 
       // Fetch rooms from the backend API
       const data: Room[] = await roomsApi.getAllRooms();
@@ -79,7 +79,7 @@ export default function Rooms() {
 
     try {
       // Import the API service
-      const { roomsApi } = await import("react-live-chatroom");
+      const { roomsApi } = await import("@/services/api");
 
       // Create room using the backend API
       const data = await roomsApi.createRoom(newRoom);
@@ -112,7 +112,7 @@ export default function Rooms() {
 
     try {
       // Import the API service
-      const { roomsApi } = await import("react-live-chatroom");
+      const { roomsApi } = await import("@/services/api");
 
       // Delete room using the backend API
       await roomsApi.deleteRoom(roomId);

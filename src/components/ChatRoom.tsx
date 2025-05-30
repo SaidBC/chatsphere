@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { websocketService } from "react-live-chatroom";
+import { websocketService } from "@/services/websocket";
 
 interface Message {
   id: string;

@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import ApiTokenInitializer from '@/components/ApiTokenInitializer';
 
 // Dashboard sidebar navigation items
 const navigation = [
@@ -35,6 +36,8 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-950">
+      {/* API Token Initializer - handles token generation */}
+      <ApiTokenInitializer />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
