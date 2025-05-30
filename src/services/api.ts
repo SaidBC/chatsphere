@@ -143,17 +143,16 @@ export const getTokenInstructions = () => {
   return {
     title: 'How to Get Your API Token',
     steps: [
-      'Go to the ChatSphere API dashboard at https://react-live-chatroom-api-production.up.railway.app',
-      'Log in with your credentials',
-      'Navigate to the "API Tokens" section',
-      'Click "Generate New Token"',
+      'Go to the ChatSphere dashboard at /dashboard/tokens',
+      'Log in with your credentials if you haven\'t already',
+      'Click "Generate New Token" button',
       'Give your token a name (e.g., "My ChatSphere Client")',
-      'Select the appropriate permissions',
+      'Select the appropriate permissions for your token',
       'Click "Create Token"',
       'Copy the generated token and paste it into the token field in this application',
       'Note: Save your token securely as it will only be shown once'
     ],
-    note: 'If you don\'t have access to generate tokens, please contact your administrator.'
+    note: 'Tokens are associated with your account and grant access to the API. Never share your tokens with others.'
   };
 };
 
