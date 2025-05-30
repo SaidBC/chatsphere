@@ -1,6 +1,7 @@
 // API Service for ChatSphere
-// Replaces react-live-chatroom API functionality
+// Simplified API service that uses a user-provided token
 
+// API base URL
 const API_BASE_URL = 'https://react-live-chatroom-api-production.up.railway.app/api';
 
 // For debugging purposes
@@ -39,283 +40,193 @@ const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
   
   const apiToken = localStorage.getItem('apiToken');
   
+  if (!apiToken) {
+    throw new Error('No API token provided. Please enter your API token in the settings.');
+  }
+  
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');
+  headers.set('Authorization', `Bearer ${apiToken}`);
 
   // Debug log for token
-  console.debug(`API Request to ${endpoint}, token exists: ${!!apiToken}`);
+  console.debug(`API Request to ${endpoint}, using token`);
   
   // Prepare URL - ensure endpoint starts with / and doesn't duplicate /api
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(`${API_BASE_URL}${normalizedEndpoint}`);
   
-  if (apiToken) {
-    headers.set('Authorization', `Bearer ${apiToken}`);
-    // Also add as query parameter for cross-origin requests
-    url.searchParams.append('token', apiToken);
-    
-    try {
-      console.debug(`Making authenticated request to: ${url.toString()}`);
-      const response = await fetch(url.toString(), {
-        ...options,
-        headers,
-      });
+  // Add token as query parameter for cross-origin requests
+  url.searchParams.append('token', apiToken);
+  
+  try {
+    console.debug(`Making request to: ${url.toString()}`);
+    const response = await fetch(url.toString(), {
+      ...options,
+      headers,
+    });
 
-      if (!response.ok) {
-        console.error(`API request error: ${response.status} ${response.statusText}`);
-        
-        // For 401 errors, try to regenerate token
-        if (response.status === 401) {
-          console.warn('401 Unauthorized error - token may be invalid');
-          
-          // Clear the invalid token
-          localStorage.removeItem('apiToken');
-          
-          // Try with development bypass
-          return await fetchWithDevBypass(endpoint, options);
-        }
-        
-        throw new Error(`API request failed: ${response.status}`);
+    if (!response.ok) {
+      console.error(`API request error: ${response.status} ${response.statusText}`);
+      
+      if (response.status === 401) {
+        console.warn('401 Unauthorized error - token may be invalid');
+        throw new Error('Your API token is invalid or has expired. Please provide a new token.');
       }
-
-      return response.json();
-    } catch (error) {
-      console.error('Error during fetch:', error);
-      // Try with development bypass as fallback
-      return await fetchWithDevBypass(endpoint, options);
+      
+      throw new Error(`API request failed: ${response.status}`);
     }
-  } else {
-    console.warn('No API token found in localStorage, using development bypass');
-    return await fetchWithDevBypass(endpoint, options);
+
+    return response.json();
+  } catch (error) {
+    console.error('Error during fetch:', error);
+    throw error;
   }
 };
 
-// Development bypass fetch helper
-const fetchWithDevBypass = async (endpoint: string, options: RequestInit = {}) => {
-  console.debug('Attempting request with development bypass...');
-  
-  // Create a dynamic token with the correct structure
-  const payload = {
-    userId: 'dev-user',
-    type: 0, // CLIENT type
-    email: 'dev@chatsphere.app',
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 1 day
-  };
-  
-  // Base64 encode the payload
-  const encodedPayload = btoa(JSON.stringify(payload));
-  const devToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${encodedPayload}.dev_signature`;
-  
-  // Store this token for future use
-  localStorage.setItem('apiToken', devToken);
+// Simple fetch helper for non-authenticated endpoints
+const fetchSimple = async (endpoint: string, options: RequestInit = {}) => {
+  console.debug('Making simple request without authentication...');
   
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');
-  headers.set('Authorization', `Bearer ${devToken}`);
   
   // Prepare URL - ensure endpoint starts with / and doesn't duplicate /api
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(`${API_BASE_URL}${normalizedEndpoint}`);
-  url.searchParams.append('token', devToken);
   
-  // Add development bypass flag if supported by the API
-  url.searchParams.append('dev_bypass', 'true');
-  
-  console.debug(`Making dev bypass request to: ${url.toString()}`);
-  const response = await fetch(url.toString(), {
-    ...options,
-    headers,
-  });
+  try {
+    console.debug(`Making simple request to: ${url.toString()}`);
+    const response = await fetch(url.toString(), {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    console.error(`Dev bypass request error: ${response.status} ${response.statusText}`);
-    throw new Error(`API request failed: ${response.status}`);
+    if (!response.ok) {
+      console.error(`Simple request error: ${response.status} ${response.statusText}`);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error during simple fetch:', error);
+    throw error;
   }
-
-  return response.json();
 };
 
 // Room related API calls
+// Simple rooms API
 export const roomsApi = {
   getAllRooms: async () => {
-    try {
-      return await fetchWithAuth('/rooms');
-    } catch (error) {
-      console.error('Error fetching rooms:', error);
-      throw error;
-    }
+    return await fetchWithAuth('/rooms');
   },
-  
+
   getRoom: async (roomId: string) => {
-    try {
-      return await fetchWithAuth(`/rooms/${roomId}`);
-    } catch (error) {
-      console.error('Error fetching room details:', error);
-      throw error;
-    }
+    return await fetchWithAuth(`/rooms/${roomId}`);
   },
-  
+
   createRoom: async (roomData: { name: string; description: string; isPrivate: boolean }) => {
-    try {
-      return await fetchWithAuth('/rooms', {
-        method: 'POST',
-        body: JSON.stringify(roomData),
-      });
-    } catch (error) {
-      console.error('Error creating room:', error);
-      throw error;
-    }
+    return await fetchWithAuth('/rooms', {
+      method: 'POST',
+      body: JSON.stringify(roomData),
+    });
   },
-  
+
   deleteRoom: async (roomId: string) => {
-    try {
-      return await fetchWithAuth(`/rooms/${roomId}`, {
-        method: 'DELETE',
-      });
-    } catch (error) {
-      console.error('Error deleting room:', error);
-      throw error;
-    }
+    return await fetchWithAuth(`/rooms/${roomId}`, {
+      method: 'DELETE',
+    });
   }
 };
 
-// User and token related API calls
-export const userApi = {
-  generateClientToken: async (tokenName: string, userId: string) => {
-    try {
-      // Try the /auth/token endpoint first (most likely endpoint)
-      return await fetchWithAuth('/auth/token', {
-        method: 'POST',
-        body: JSON.stringify({ name: tokenName, userId }),
-      });
-    } catch (firstError) {
-      console.warn('First token endpoint failed, trying alternative:', firstError);
-      try {
-        // Try alternative endpoint
-        return await fetchWithAuth('/users/token', {
-          method: 'POST',
-          body: JSON.stringify({ name: tokenName, userId }),
-        });
-      } catch (secondError) {
-        console.error('Error generating token from all endpoints:', secondError);
-        throw secondError;
-      }
-    }
-  },
+// Instructions for generating an API token
+export const getTokenInstructions = () => {
+  return {
+    title: 'How to Get Your API Token',
+    steps: [
+      'Go to the ChatSphere API dashboard at https://react-live-chatroom-api-production.up.railway.app',
+      'Log in with your credentials',
+      'Navigate to the "API Tokens" section',
+      'Click "Generate New Token"',
+      'Give your token a name (e.g., "My ChatSphere Client")',
+      'Select the appropriate permissions',
+      'Click "Create Token"',
+      'Copy the generated token and paste it into the token field in this application',
+      'Note: Save your token securely as it will only be shown once'
+    ],
+    note: 'If you don\'t have access to generate tokens, please contact your administrator.'
+  };
+};
 
-  verifyToken: async () => {
+// Token management API
+export const tokenApi = {
+  // Verify if a token is valid
+  verifyToken: async (token: string) => {
     try {
-      return await fetchWithAuth('/auth/verify');
+      const headers = new Headers();
+      headers.set('Authorization', `Bearer ${token}`);
+      headers.set('Content-Type', 'application/json');
+      
+      // Try to verify the token against the health endpoint
+      const healthUrl = `${API_BASE_URL}/health`;
+      console.debug('Verifying token with health endpoint:', healthUrl);
+      
+      const response = await fetch(healthUrl, { headers });
+      if (response.ok) {
+        return { valid: true, message: 'Token is valid' };
+      }
+      
+      // If health endpoint fails, try auth verify
+      const verifyUrl = `${API_BASE_URL}/auth/verify`;
+      const verifyResponse = await fetch(verifyUrl, { headers });
+      
+      if (verifyResponse.ok) {
+        return { valid: true, message: 'Token is valid' };
+      }
+      
+      return { valid: false, message: 'Token verification failed' };
     } catch (error) {
       console.error('Error verifying token:', error);
-      throw error;
+      return { valid: false, message: 'Error verifying token' };
     }
+  },
+  
+  // Save token to localStorage
+  saveToken: (token: string) => {
+    localStorage.setItem('apiToken', token);
+    console.log('API token saved to localStorage');
+    return true;
+  },
+  
+  // Get the current token
+  getToken: () => {
+    return localStorage.getItem('apiToken');
+  },
+  
+  // Clear the current token
+  clearToken: () => {
+    localStorage.removeItem('apiToken');
+    console.log('API token cleared from localStorage');
+    return true;
   }
 };
 
-export const generateApiToken = async (userId: string) => {
-  console.log('Generating API token for user:', userId);
-  
-  // If we already have a token in localStorage, verify it first
-  const existingToken = localStorage.getItem('apiToken');
-  if (existingToken) {
-    console.log('Found existing token in localStorage, verifying...');
-    try {
-      // Try to make a test request to verify the token
-      const baseUrl = API_BASE_URL.replace(/\/api$/, '');
-      const healthUrl = `${baseUrl}/api/health`;
-      
-      console.debug('Verifying token with URL:', healthUrl);
-      
-      const headers = new Headers();
-      headers.set('Authorization', `Bearer ${existingToken}`);
-      
-      const testUrl = new URL(healthUrl);
-      testUrl.searchParams.append('token', existingToken);
-      
-      const response = await fetch(testUrl.toString(), { headers });
-      
-      if (response.ok) {
-        console.log('Existing token verified successfully');
-        return existingToken;
-      } else {
-        console.warn(`Existing token failed verification (${response.status}), will generate new token`);
-        localStorage.removeItem('apiToken');
-      }
-    } catch (error) {
-      console.warn('Error verifying existing token:', error);
-      // Continue to generate a new token
-    }
-  }
-  
-  // Try multiple token generation approaches
+// Helper function to check if the API is available
+export const checkApiHealth = async () => {
   try {
-    console.log('Attempting to generate new token...');
-    const tokenName = `chatsphere_client_${Date.now()}`;
+    const healthUrl = `${API_BASE_URL}/health`;
+    console.debug('Checking API health at:', healthUrl);
     
-    // Try direct API call first (no authentication required)
-    try {
-      // Check if the tokens endpoint exists in the API
-      const tokensEndpoint = `${API_BASE_URL}/tokens/generate`;
-      console.debug('Attempting to generate token via direct API call:', tokensEndpoint);
-      
-      const directResponse = await fetch(tokensEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, name: tokenName })
-      });
-      
-      if (directResponse.ok) {
-        const data = await directResponse.json();
-        if (data && data.token) {
-          console.log('Token generated successfully via direct API call');
-          localStorage.setItem('apiToken', data.token);
-          return data.token;
-        }
-      }
-    } catch (directError) {
-      console.warn('Direct token generation failed:', directError);
+    const response = await fetch(healthUrl);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('API health check successful:', data);
+      return true;
+    } else {
+      console.warn(`API health check failed: ${response.status}`);
+      return false;
     }
-    
-    // Try through our API service
-    try {
-      const tokenResponse = await userApi.generateClientToken(tokenName, userId);
-      if (tokenResponse && tokenResponse.token) {
-        console.log('Token generated successfully via userApi');
-        localStorage.setItem('apiToken', tokenResponse.token);
-        return tokenResponse.token;
-      }
-    } catch (serviceError) {
-      console.warn('Service token generation failed:', serviceError);
-    }
-    
-    // If all else fails, create a development token
-    return createDevToken(userId);
   } catch (error) {
-    console.error('Failed to generate API token:', error);
-    return createDevToken(userId);
+    console.error('API health check error:', error);
+    return false;
   }
-};
-
-// Helper function to create a development token
-const createDevToken = (userId: string) => {
-  console.warn('Creating development token as fallback');
-  
-  // Create a token payload that matches what the API expects
-  const payload = {
-    userId: userId || 'dev-user',
-    type: 0, // CLIENT type
-    email: 'dev@chatsphere.app',
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 1 day
-  };
-  
-  // Base64 encode the payload
-  const encodedPayload = btoa(JSON.stringify(payload));
-  const devToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${encodedPayload}.dev_signature`;
-  
-  // Store this token for future use
-  localStorage.setItem('apiToken', devToken);
-  return devToken;
 };

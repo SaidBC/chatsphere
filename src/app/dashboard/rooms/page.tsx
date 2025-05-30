@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AuthenticatedContent from "@/components/AuthenticatedContent";
 
 type Room = {
   id: string;
@@ -33,25 +34,13 @@ export default function Rooms() {
   });
 
   useEffect(() => {
+    // We still check for session for additional security
     if (!session) {
       router.push("/login");
       return;
     }
 
     fetchRooms();
-  }, [session, router]);
-
-  // Redirect if session expires
-  useEffect(() => {
-    const checkSession = () => {
-      if (!session) {
-        router.push("/login");
-      }
-    };
-
-    // Check session status periodically
-    const interval = setInterval(checkSession, 5000);
-    return () => clearInterval(interval);
   }, [session, router]);
 
   const fetchRooms = async () => {
@@ -143,6 +132,7 @@ export default function Rooms() {
   }
 
   return (
+    <AuthenticatedContent>
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
@@ -459,5 +449,6 @@ export default function Rooms() {
         )}
       </div>
     </div>
+    </AuthenticatedContent>
   );
 }
