@@ -31,12 +31,15 @@ const TokenInput: React.FC<TokenInputProps> = ({ onTokenValidated }) => {
       return;
     }
     
-    // Check if it's a JWT token (should have 3 parts separated by dots)
-    const parts = tokenToValidate.split('.');
-    if (parts.length !== 3) {
-      setError('Invalid token format. API tokens should have 3 parts separated by dots.');
-      setIsValidating(false);
-      return;
+    // Remove any whitespace from the token
+    const cleanToken = tokenToValidate.trim();
+    
+    // Check token format - we support both JWT tokens and hash-style tokens
+    const isJwtToken = cleanToken.split('.').length === 3;
+    const isHashToken = /^[a-f0-9]{64}$/i.test(cleanToken); // 64-character hex string
+    
+    if (!isJwtToken && !isHashToken) {
+      console.warn('Token format does not match JWT or hash format, but will try to validate anyway');
     }
     
     try {

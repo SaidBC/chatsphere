@@ -7,19 +7,49 @@ const TokenTester: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [decodedPayload, setDecodedPayload] = useState<any>(null);
 
-  // Function to decode a JWT token
-  const decodeToken = (tokenToDecode: string) => {
+  // Function to analyze a token
+  const analyzeToken = (tokenToAnalyze: string) => {
     try {
-      const parts = tokenToDecode.split('.');
-      if (parts.length !== 3) {
-        return { error: 'Invalid token format (not a JWT token)' };
+      // Clean the token
+      const cleanToken = tokenToAnalyze.trim();
+      
+      // Check if it's a JWT token (3 parts separated by dots)
+      const parts = cleanToken.split('.');
+      if (parts.length === 3) {
+        try {
+          // Try to decode the payload (middle part)
+          const payload = JSON.parse(atob(parts[1]));
+          return {
+            type: 'JWT',
+            payload,
+            format: 'valid'
+          };
+        } catch (error) {
+          return { 
+            type: 'JWT',
+            error: `Failed to decode JWT payload: ${(error as Error).message}`,
+            format: 'invalid'
+          };
+        }
       }
       
-      // Decode the payload (middle part)
-      const payload = JSON.parse(atob(parts[1]));
-      return payload;
+      // Check if it's a hash token (64 hex characters)
+      if (/^[a-f0-9]{64}$/i.test(cleanToken)) {
+        return {
+          type: 'HASH',
+          format: 'valid',
+          note: 'This appears to be a 64-character hex token. No payload can be decoded.'
+        };
+      }
+      
+      // Unknown format
+      return {
+        type: 'UNKNOWN',
+        format: 'unknown',
+        note: `Token length: ${cleanToken.length} characters. Not recognized as JWT or hash token.`
+      };
     } catch (error) {
-      return { error: `Failed to decode token: ${(error as Error).message}` };
+      return { error: `Failed to analyze token: ${(error as Error).message}` };
     }
   };
 
@@ -28,10 +58,10 @@ const TokenTester: React.FC = () => {
     const newToken = e.target.value;
     setToken(newToken);
     
-    // Try to decode the token as user types
+    // Try to analyze the token as user types
     if (newToken.trim()) {
-      const decoded = decodeToken(newToken);
-      setDecodedPayload(decoded);
+      const analyzed = analyzeToken(newToken);
+      setDecodedPayload(analyzed);
     } else {
       setDecodedPayload(null);
     }

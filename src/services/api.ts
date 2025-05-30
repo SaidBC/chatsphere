@@ -161,33 +161,46 @@ export const tokenApi = {
   // Verify if a token is valid
   verifyToken: async (token: string) => {
     try {
-      // First, validate the token format (should be a JWT token with 3 parts)
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        console.error('Invalid token format: not a JWT token');
-        return { valid: false, message: 'Invalid token format' };
-      }
-
-      // Try to decode the token payload to validate its structure
-      try {
-        const payload = JSON.parse(atob(parts[1]));
-        console.debug('Token payload:', payload);
-        
-        // Check if token has required fields
-        if (!payload.userId) {
-          console.error('Invalid token: missing userId in payload');
-          return { valid: false, message: 'Invalid token structure' };
+      // Clean the token (remove any whitespace)
+      const cleanToken = token.trim();
+      
+      // Determine the token type
+      const isJwtToken = cleanToken.split('.').length === 3;
+      const isHashToken = /^[a-f0-9]{64}$/i.test(cleanToken); // 64-character hex
+      
+      console.debug('Token format check:', { isJwtToken, isHashToken, length: cleanToken.length });
+      
+      // For JWT tokens, we can validate the structure
+      if (isJwtToken) {
+        const parts = cleanToken.split('.');
+        try {
+          // Try to decode the token payload
+          const payload = JSON.parse(atob(parts[1]));
+          console.debug('JWT token payload:', payload);
+          
+          // Check if token has required fields
+          if (!payload.userId) {
+            console.warn('JWT token missing userId in payload');
+          }
+          
+          // Check token expiration
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            console.error('JWT token has expired');
+            return { valid: false, message: 'Token has expired' };
+          }
+        } catch (decodeError) {
+          console.warn('Could not decode JWT token payload:', decodeError);
+          // Continue with validation - we'll let the API decide if the token is valid
         }
-        
-        // Check token expiration
-        if (payload.exp && payload.exp * 1000 < Date.now()) {
-          console.error('Token has expired');
-          return { valid: false, message: 'Token has expired' };
-        }
-      } catch (decodeError) {
-        console.error('Error decoding token:', decodeError);
-        return { valid: false, message: 'Could not decode token' };
+      } else if (isHashToken) {
+        console.debug('Token appears to be a hash-style token');
+        // For hash tokens, we can't validate the structure locally
+        // We'll let the API decide if it's valid
+      } else {
+        console.warn('Token format is unknown, proceeding with validation anyway');
       }
+      
+      // For both token types, we'll try to validate with the API
       
       // Create headers for API validation
       const headers = new Headers();
